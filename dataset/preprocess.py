@@ -6,7 +6,9 @@ from torch.utils.data import Dataset, DataLoader
 
 from transformers import BertTokenizer
 
-PATH = "Automotive_5.json"
+from config import Config
+
+PATH = "P:\RecommandOnTransformer\dataset\Automotive_5.json"
 BERT_PATH = "P:\Dataset\Bert-uncased"
 tokenizer = BertTokenizer.from_pretrained(BERT_PATH)
 
@@ -30,6 +32,7 @@ class PreProcess():
     # ---------------------------------------------------------------------------
     # 读取AutoMotive的数据, 输出summary和用户id
     def read_json(self):
+        print("-----读取数据-----")
         with open(PATH, 'r', encoding='utf-8') as fp:
             data_list = []
             for line in fp.readlines():
@@ -96,11 +99,13 @@ class PreProcess():
     # ----------------------------------3----------------------------------------
     # 根据用户id，商品id整理相应的summary
     def build_specific_summary(self):
-        print("-----收集所有用户和物品对应的评论-----")
+        print("-----检索用户和物品对应的评论-----")
         user_all_summary = {user_id: [] for user_id in self.user_dict.values()}
         item_all_summary = {item_id: [] for item_id in self.item_dict.values()}
-
-        print(user_all_summary)
+        print("-----检索该用户评论过的所有物品-----")
+        user2itemList = {user_id: [] for user_id in self.user_dict.values()}
+        print("-----检索该物品被评论过的所有用户-----")
+        item2userList = {item_id: [] for item_id in self.item_dict.values()}
 
         for i, data in enumerate(self.data_list):
             summary_ids = data['summary_ids']
@@ -110,12 +115,18 @@ class PreProcess():
             user_all_summary[user_id].append(summary_ids)
             item_all_summary[item_id].append(summary_ids)
 
+            user2itemList[user_id].append(item_id)
+            item2userList[item_id].append(user_id)
+
         for i, data in enumerate(self.data_list):
             user_id = data['user_id']
             item_id = data['item_id']
 
             self.data_list[i]["user_all_summary"] = user_all_summary[user_id]
             self.data_list[i]["item_all_summary"] = item_all_summary[item_id]
+
+            self.data_list[i]["user2itemList"] = user2itemList[user_id]
+            self.data_list[i]["item2userList"] = item2userList[item_id]
 
     # ----------------------------------4----------------------------------------
     # 划分数据集
@@ -148,13 +159,15 @@ class AutomotiveDataset(Dataset):
     def __getitem__(self, index):
         data = self.data_list[index]
 
-        user_id = torch.tensor(data['user_id'])
-        item_id = torch.tensor(data['item_id'])
-        rating = torch.tensor(data['rating'])
-        user_all_summary = torch.tensor(data['user_all_summary'])
-        item_all_summary = torch.tensor(data['item_all_summary'])
+        user_id = torch.tensor([data['user_id']]).long()
+        item_id = torch.tensor([data['item_id']]).long()
+        user2itemList = torch.tensor(data['user2itemList']).long()
+        item2userList = torch.tensor(data['item2userList']).long()
+        rating = torch.tensor([data['rating']]).long()
+        user_all_summary = torch.tensor(data['user_all_summary']).long()
+        item_all_summary = torch.tensor(data['item_all_summary']).long()
 
-        return user_id, item_id, rating, user_all_summary, item_all_summary
+        return user_id, item_id, user2itemList, item2userList, rating, user_all_summary, item_all_summary
 
     def __len__(self):
         return len(self.data_list)
@@ -164,12 +177,23 @@ def get_dataiter():
     p = PreProcess()
     p.main_preprocess()
 
+    config = init_config(p)
+
     train_dataset = AutomotiveDataset(p.train_data_list)
     test_dataset = AutomotiveDataset(p.test_data_list)
     val_dataset = AutomotiveDataset(p.val_data_list)
 
-    train_iter = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    test_iter = DataLoader(test_dataset, batch_size=32, shuffle=False)
-    val_iter = DataLoader(val_dataset, batch_size=32, shuffle=False)
+    train_iter = DataLoader(train_dataset, batch_size=1, shuffle=True)
+    test_iter = DataLoader(test_dataset, batch_size=1, shuffle=False)
+    val_iter = DataLoader(val_dataset, batch_size=1, shuffle=False)
 
-    return train_iter, test_iter, val_iter
+    return train_iter, test_iter, val_iter, config
+
+
+def init_config(p):
+    config = Config()
+    config.user_num = len(p.user_dict)+1
+    config.item_num = len(p.item_dict)+1
+    config.data_list = p.data_list
+
+    return config
