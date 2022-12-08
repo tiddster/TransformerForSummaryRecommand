@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
+from transformers import AutoConfig
+from transformers.models.bert.modeling_bert import BertEmbeddings
 
 class NARRE(nn.Module):
     def __init__(self, config):
@@ -33,6 +35,11 @@ class Net(nn.Module):
 
         self.id_embedding = nn.Embedding(id_num, config.id_emb_size)
         self.summary_embedding = nn.Embedding(config.vocab_size, config.summary_dim)
+
+        # bert_config = AutoConfig.from_pretrained(config.BERT_PATH)
+        # self.summary_embedding2 = BertEmbeddings(bert_config)
+        # print(self.summary_embedding2)
+
         self.u_i_id_embedding = nn.Embedding(ui_id_num, config.id_emb_size)
 
         self.cnn = nn.Conv2d(1, config.filters_num, (1, config.summary_dim))

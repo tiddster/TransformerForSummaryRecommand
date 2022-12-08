@@ -17,3 +17,5 @@ class Config():
         self.drop_out = 0.5
 
         self.data_list = None
+
+        self.BERT_PATH = ""

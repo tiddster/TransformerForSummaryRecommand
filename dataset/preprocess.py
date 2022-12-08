@@ -195,5 +195,6 @@ def init_config(p):
     config.user_num = len(p.user_dict)+1
     config.item_num = len(p.item_dict)+1
     config.data_list = p.data_list
+    config.BERT_PATH = BERT_PATH
 
     return config
