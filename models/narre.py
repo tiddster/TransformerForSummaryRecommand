@@ -32,16 +32,15 @@ class Net(nn.Module):
             ui_id_num = config.user_num
 
         self.id_embedding = nn.Embedding(id_num, config.id_emb_size)
-        print(self.id_embedding)
-        self.summay_embedding = nn.Embedding(config.vocab_size, config.summary_dim)
+        self.summary_embedding = nn.Embedding(config.vocab_size, config.summary_dim)
         self.u_i_id_embedding = nn.Embedding(ui_id_num, config.id_emb_size)
+
+        self.cnn = nn.Conv2d(1, config.filters_num, (1, config.summary_dim))
 
         self.review_linear = nn.Linear(config.filters_num, config.id_emb_size)
         self.id_linear = nn.Linear(config.id_emb_size, config.id_emb_size, bias=False)
         self.attention_linear = nn.Linear(config.id_emb_size, 1)
         self.fc_layer = nn.Linear(config.filters_num, config.id_emb_size)
-
-        self.cnn = nn.Conv2d(1, config.filters_num, (1, config.summary_dim))
 
         self.dropout = nn.Dropout(config.drop_out)
         self.init_param()
@@ -68,7 +67,7 @@ class Net(nn.Module):
             else:
                 self.word_embs.weight.data.copy_(w2v)
         else:
-            nn.init.xavier_normal_(self.summay_embedding.weight)
+            nn.init.xavier_normal_(self.summary_embedding.weight)
 
         nn.init.uniform_(self.id_embedding.weight, a=-0.1, b=0.1)
         nn.init.uniform_(self.u_i_id_embedding.weight, a=-0.1, b=0.1)
@@ -82,11 +81,11 @@ class Net(nn.Module):
         :return:
         """
         # --------------- word embedding ----------------------------------
-        summary = self.summay_embedding(summary)
+        summary = self.summary_embedding(summary)
         bs, num, seq_len, wd = summary.size()
         summary = summary.view(-1, seq_len, wd)
 
-        # ids:  [1, 1, dim]
+        # ids:  [1, dim]
         id_emb = self.id_embedding(ids).squeeze(1)
 
         # uiid_emb_output:  [1, seq_num, dim]
@@ -122,9 +121,11 @@ class Net(nn.Module):
 
         # r_feature: [1, seq_num, filter_num]
         summary_feature = feature * att_weight
+
         # r_feature: [1, filter_num]
         summary_feature = summary_feature.sum(1)
         summary_feature = self.dropout(summary_feature)
+        # r_feature: [1, dim]
         summary_feature_output = self.fc_layer(summary_feature)
 
         return torch.stack([id_emb, summary_feature_output], 1)
