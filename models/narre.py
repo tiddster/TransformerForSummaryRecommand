@@ -126,13 +126,13 @@ class Net(nn.Module):
         # att_score: [1, seq_num, 1]
         att_weight = F.softmax(att_score, 1)
 
-        # r_feature: [1, seq_num, filter_num]
+        # summary_feature_output: [1, seq_num, filter_num]
         summary_feature = feature * att_weight
 
-        # r_feature: [1, filter_num]
+        # summary_feature_output: [1, filter_num]
         summary_feature = summary_feature.sum(1)
         summary_feature = self.dropout(summary_feature)
-        # r_feature: [1, dim]
+        # summary_feature_output: [1, dim]
         summary_feature_output = self.fc_layer(summary_feature)
 
-        return torch.stack([id_emb, summary_feature_output], 1)
+        return torch.stack([id_emb, summary_feature_output], dim=1)
