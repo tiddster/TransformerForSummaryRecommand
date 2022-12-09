@@ -5,7 +5,8 @@ class Config():
         self.vocab_size = 30522  # 词典大小
         self.feature_dim = 128  # 特征的维度
         self.summary_dim = 128
-        self.id_emb_size = 64  # id嵌入层维度
+        self.id_emb_size = 128  # id嵌入层维度
+        self.after_fusion_dim = self.id_emb_size * 2 * 2
         self.filters_num = 32
 
         self.drop_out = 0.5
@@ -17,7 +18,7 @@ class Config():
         self.self_att = True  # 是否在混合层中使用自注意力层
         self.use_word_embedding = False  # 是否使用预训练的词嵌入层
 
-        self.recommendLayerOutputType = 'mlp'
+        self.predictionLayerOutputType = 'fm'
         self.r_id_merge = 'else'
         self.ui_merge = 'add'
         self.BERT_PATH = ""

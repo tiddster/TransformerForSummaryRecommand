@@ -2,16 +2,15 @@ import torch
 
 import dataset.preprocess as pre
 import models.narre as narre
-from framework.fusion import FusionLayer
-
+from model import Model
 
 if __name__ == '__main__':
     train_iter, test_iter, val_iter, config = pre.get_dataiter()
 
-    narreM = narre.NARRE(config)
-    fusionLayer = FusionLayer(config)
+    narreM = narre.NARRE
+    model = Model(config, narreM)
 
     for data in train_iter:
-        user_feature, item_feature = narreM(data)
-        fusion_feature = fusionLayer(user_feature, item_feature)
+        output = model(data)
+        print(output)
 

@@ -13,21 +13,24 @@ class PredictionLayer(nn.Module):
     '''
     def __init__(self, config):
         super(PredictionLayer, self).__init__()
-        self.output_type = config.output_type
-        if config.output == "fm":
-            self.model = FM(config.feature_dim, config.user_num, config.item_num)
-        elif config.output == "lfm":
-            self.model = LFM(config.feature_dim, config.user_num, config.item_num)
-        elif config.output == 'mlp':
-            self.model = MLP(config.feature_dim)
-        elif config.output == 'nfm':
-            self.model = NFM(config.feature_dim)
+        self.output_type = 'lfm'
 
-    def forward(self, feature, uid, iid):
-        if self.output == "lfm" or "fm" or "nfm":
-            return self.model(feature, uid, iid)
+        if config.predictionLayerOutputType == "fm":
+            self.model = FM(config)
+        elif config.predictionLayerOutputType == "lfm":
+            self.model = LFM(config)
+        elif config.predictionLayerOutputType == 'mlp':
+            self.model = MLP(config)
+        elif config.predictionLayerOutputType == 'nfm':
+            self.model = NFM(config)
+
+    def forward(self, feature, data):
+        user_id, item_id, _, _, _, _, _ = data
+
+        if self.output_type == "lfm" or "fm":
+            return self.model(feature, user_id, item_id)
         else:
-            return self.model(feature, 1, keepdim=True)
+            return self.model(feature)
 
 
 class LFM(nn.Module):
@@ -61,13 +64,13 @@ class NFM(nn.Module):
     '''
     Neural FM
     '''
-    def __init__(self, dim):
+    def __init__(self, config):
         super(NFM, self).__init__()
-        self.dim = dim
+        self.dim = config.after_fusion_dim
 
-        self.fc = nn.Linear(dim, 1)
+        self.fc = nn.Linear(self.dim, 1)
 
-        self.fm_V = nn.Parameter(torch.randn(16, dim))
+        self.fm_V = nn.Parameter(torch.randn(16, self.dim))
         self.mlp = nn.Linear(16, 16)
         self.h = nn.Linear(16, 1, bias=False)
         self.drop_out = nn.Dropout(0.5)
@@ -79,12 +82,12 @@ class NFM(nn.Module):
         nn.init.uniform_(self.fm_V, -0.1, 0.1)
         nn.init.uniform_(self.h.weight, -0.1, 0.1)
 
-    def forward(self, input_vec, *args):
-        fm_linear_part = self.fc(input_vec)
-        fm_interactions_1 = torch.mm(input_vec, self.fm_V.t())
+    def forward(self, feature):
+        fm_linear_part = self.fc(feature)
+        fm_interactions_1 = torch.mm(feature, self.fm_V.t())
         fm_interactions_1 = torch.pow(fm_interactions_1, 2)
 
-        fm_interactions_2 = torch.mm(torch.pow(input_vec, 2), torch.pow(self.fm_V, 2).t())
+        fm_interactions_2 = torch.mm(torch.pow(feature, 2), torch.pow(self.fm_V, 2).t())
         bilinear = 0.5 * (fm_interactions_1 - fm_interactions_2)
 
         out = F.relu(self.mlp(bilinear))

@@ -48,7 +48,6 @@ class FusionLayer(nn.Module):
 
         # output: [1, 2 * 2 * dim]
         output = torch.cat([user_feature, item_feature], dim=1)
-        print(output.shape)
         # if self.config.ui_merge == 'cat':
         #     out = torch.cat([user_feature, item_feature], dim=1)
         # elif self.config.ui_merge == 'add':
