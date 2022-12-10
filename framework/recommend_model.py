@@ -3,6 +3,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 class PredictionLayer(nn.Module):
     '''
         Rating Prediciton Methods
@@ -14,7 +17,7 @@ class PredictionLayer(nn.Module):
     def __init__(self, config):
         super(PredictionLayer, self).__init__()
         self.output_type = 'lfm'
-
+        self.config = config
         if config.predictionLayerOutputType == "fm":
             self.model = FM(config)
         elif config.predictionLayerOutputType == "lfm":
@@ -26,6 +29,7 @@ class PredictionLayer(nn.Module):
 
     def forward(self, feature, data):
         user_id, item_id, _, _, _, _, _ = data
+        user_id, item_id = user_id.to(self.config.device), item_id.to(self.config.device)
 
         if self.output_type == "lfm" or "fm":
             return self.model(feature, user_id, item_id)

@@ -16,6 +16,9 @@ class NARRE(nn.Module):
 
     def forward(self, data):
         user_id, item_id, user2itemList, item2userList, rating, user_all_summary, item_all_summary = data
+        user_all_summary, user_id, user2itemList = user_all_summary.to(self.config.device), user_id.to(self.config.device), user2itemList.to(self.config.device)
+        item_all_summary, item_id, item2userList = item_all_summary.to(self.config.device), item_id.to(self.config.device), item2userList.to(self.config.device)
+
         user_feature = self.user_net(user_all_summary, user_id, user2itemList)
         item_feature = self.item_net(item_all_summary, item_id, item2userList)
         return user_feature, item_feature

@@ -1,3 +1,4 @@
+import torch
 class Config():
     def __init__(self):
         self.num_heads = 4  # 多头注意力的头数
@@ -9,8 +10,6 @@ class Config():
         self.after_fusion_dim = self.id_emb_size * 2 * 2
         self.filters_num = 32
 
-        self.drop_out = 0.5
-
         self.data_list = None
         self.user_num = 0  # 用户的数量
         self.item_num = 0  # 评论数量
@@ -18,7 +17,14 @@ class Config():
         self.self_att = True  # 是否在混合层中使用自注意力层
         self.use_word_embedding = False  # 是否使用预训练的词嵌入层
 
+        self.lr = 1e-4
+        self.weight_decay = 1e-3
+        self.drop_out = 0.5
+
         self.predictionLayerOutputType = 'fm'
         self.r_id_merge = 'else'
         self.ui_merge = 'add'
         self.BERT_PATH = ""
+
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(torch.cuda.get_device_name())
