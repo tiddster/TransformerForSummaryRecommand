@@ -13,6 +13,7 @@ class Config():
         self.data_list = None
         self.user_num = 0  # 用户的数量
         self.item_num = 0  # 评论数量
+        self.max_sum_len = 0 # 最大summary长度
 
         self.self_att = True  # 是否在混合层中使用自注意力层
         self.use_word_embedding = False  # 是否使用预训练的词嵌入层

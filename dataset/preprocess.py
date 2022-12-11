@@ -128,7 +128,37 @@ class PreProcess():
             self.data_list[i]["user2itemList"] = user2itemList[user_id]
             self.data_list[i]["item2userList"] = item2userList[item_id]
 
-    # ----------------------------------4----------------------------------------
+    # ----------------------------------5---------------------------------------
+    # 数据集不平衡，比例为 542 606 1430 3967  13928
+    def balance_dataset(self):
+        # 输出数据集的数量
+        # one, two, three, four, five = 0, 0, 0, 0, 0
+        new_data_list = []
+        for data in self.data_list:
+            rating = data["rating"]
+            if rating == 1:
+                for i in range(25):
+                    new_data_list.append(data)
+                # one += 1
+            elif rating == 2:
+                for i in range(21):
+                    new_data_list.append(data)
+                # two += 1
+            elif rating == 3:
+                for i in range(10):
+                    new_data_list.append(data)
+                # three += 1
+            elif rating == 4:
+                for i in range(4):
+                    new_data_list.append(data)
+                # four += 1
+            elif rating == 5:
+                new_data_list.append(data)
+                # five += 1
+        self.data_list = new_data_list
+        # print(one, two, three, four, five)
+
+    # ----------------------------------5---------------------------------------
     # 划分数据集
     def split_train_test(self):
         print("-----划分数据集-----")
@@ -149,6 +179,7 @@ class PreProcess():
         self.build_summary_tokens_id()
         self.build_id_info()
         self.build_specific_summary()
+        self.balance_dataset()
         self.split_train_test()
 
 
@@ -196,5 +227,6 @@ def init_config(p):
     config.item_num = len(p.item_dict)+1
     config.data_list = p.data_list
     config.BERT_PATH = BERT_PATH
+    config.max_sum_len = p.max_sum_len
 
     return config

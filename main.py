@@ -59,9 +59,10 @@ def train(num_epoch):
             user_id, item_id, user2itemList, item2userList, rating, user_all_summary, item_all_summary = data
             rating = rating.to(config.device)
             output = model(data)
-            output = torch.tensor(output, dtype=torch.int).to(config.device)
 
-            test_total_acc += 1 if output == rating else 0
+            abs_difference = torch.abs(rating - output).item()
+
+            test_total_acc += 1 if abs_difference <= 0.5 else 0
             test_total_num += rating.shape[0]
 
         avg_acc = test_total_acc / test_total_num
@@ -85,7 +86,7 @@ def loss_plot(train_loss, val_loss, epoch_num):
 
 
 if __name__ == '__main__':
-    num_epoch = 30
+    num_epoch = 10
     train_iter, test_iter, val_iter, config = pre.get_dataiter()
 
     narreM = narre.NARRE
