@@ -132,29 +132,29 @@ class PreProcess():
     # 数据集不平衡，比例为 542 606 1430 3967  13928
     def balance_dataset(self):
         # 输出数据集的数量
-        # one, two, three, four, five = 0, 0, 0, 0, 0
+        one, two, three, four, five = 0, 0, 0, 0, 0
+        max_num = 1000
         new_data_list = []
         for data in self.data_list:
             rating = data["rating"]
-            if rating == 1:
-                for i in range(25):
-                    new_data_list.append(data)
-                # one += 1
-            elif rating == 2:
-                for i in range(21):
-                    new_data_list.append(data)
-                # two += 1
-            elif rating == 3:
-                for i in range(10):
-                    new_data_list.append(data)
-                # three += 1
-            elif rating == 4:
+            if rating == 1 and one < max_num:
                 for i in range(4):
                     new_data_list.append(data)
-                # four += 1
-            elif rating == 5:
+                    one += 1
+            elif rating == 2 and two < max_num:
+                for i in range(3):
+                    new_data_list.append(data)
+                    two += 1
+            elif rating == 3 and three < max_num:
+                for i in range(2):
+                    new_data_list.append(data)
+                    three += 1
+            elif rating == 4 and four < max_num:
                 new_data_list.append(data)
-                # five += 1
+                four += 1
+            elif rating == 5 and four < max_num:
+                new_data_list.append(data)
+                five += 1
         self.data_list = new_data_list
         # print(one, two, three, four, five)
 
@@ -179,7 +179,7 @@ class PreProcess():
         self.build_summary_tokens_id()
         self.build_id_info()
         self.build_specific_summary()
-        # self.balance_dataset()
+        self.balance_dataset()
         self.split_train_test()
 
 

@@ -12,7 +12,7 @@ class Model(nn.Module):
 
         self.config = config
         # 根据fusionLayer中的不同融合操作调整feature_dim
-        self.config.feature_dim = 2 * 2 * config.id_emb_size
+        self.config.feature_dim = 2 * 2 * config.id_emb_dim
 
         self.predictionLayer = PredictionLayer(config).to(config.device)
 

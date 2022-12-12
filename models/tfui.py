@@ -36,16 +36,16 @@ class Net(nn.Module):
             id_num = config.item_num
             ui_id_num = config.user_num
 
-        self.id_embedding = nn.Embedding(id_num, config.id_emb_size)
-        self.u_i_id_embedding = nn.Embedding(ui_id_num, config.id_emb_size)
+        self.id_embedding = nn.Embedding(id_num, config.id_emb_dim)
+        self.u_i_id_embedding = nn.Embedding(ui_id_num, config.id_emb_dim)
         # self.summary_embedding = nn.Embedding(config.vocab_size, config.summary_dim)
 
         self.transformersLayer = TransformerLayer(config)
 
-        self.summary_linear = nn.Linear(config.feature_dim, config.id_emb_size)
-        self.id_linear = nn.Linear(config.id_emb_size, config.id_emb_size, bias=False)
-        self.attention_linear = nn.Linear(config.id_emb_size, 1)
-        self.fc_layer = nn.Linear(config.feature_dim, config.id_emb_size)
+        self.summary_linear = nn.Linear(config.feature_dim, config.id_emb_dim)
+        self.id_linear = nn.Linear(config.id_emb_dim, config.id_emb_dim, bias=False)
+        self.attention_linear = nn.Linear(config.id_emb_dim, 1)
+        self.fc_layer = nn.Linear(config.feature_dim, config.id_emb_dim)
 
         self.dropout = nn.Dropout(config.drop_out)
         self.init_param()
@@ -119,10 +119,10 @@ class Net(nn.Module):
         # summary_feature_output: [1, dim]
         summary_feature = summary_feature.sum(dim=1)
         summary_feature = self.dropout(summary_feature)
-        # summary_feature_output: [1, dim]
-        summary_feature_output = self.fc_layer(summary_feature)
+        # # summary_feature_output: [1, dim]
+        # summary_feature_output = self.fc_layer(summary_feature)
 
-        return torch.stack([id_emb, summary_feature_output], dim=1)
+        return torch.stack([id_emb, summary_feature], dim=1)
 
 
 class PositionalEncoding(nn.Module):

@@ -8,7 +8,7 @@ class FusionLayer(nn.Module):
     '''
     def __init__(self, config):
         super(FusionLayer, self).__init__()
-        self.attn = SelfAtt(config.id_emb_size, config.num_heads)
+        self.attn = SelfAtt(config.id_emb_dim, config.num_heads)
 
         self.config = config
 

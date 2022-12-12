@@ -36,21 +36,21 @@ class Net(nn.Module):
             id_num = config.item_num
             ui_id_num = config.user_num
 
-        self.id_embedding = nn.Embedding(id_num, config.id_emb_size)
+        self.id_embedding = nn.Embedding(id_num, config.id_emb_dim)
         self.summary_embedding = nn.Embedding(config.vocab_size, config.summary_dim)
 
         # bert_config = AutoConfig.from_pretrained(config.BERT_PATH)
         # self.summary_embedding2 = BertEmbeddings(bert_config)
         # print(self.summary_embedding2)
 
-        self.u_i_id_embedding = nn.Embedding(ui_id_num, config.id_emb_size)
+        self.u_i_id_embedding = nn.Embedding(ui_id_num, config.id_emb_dim)
 
         self.cnn = nn.Conv2d(1, config.filters_num, (1, config.summary_dim))
 
-        self.review_linear = nn.Linear(config.filters_num, config.id_emb_size)
-        self.id_linear = nn.Linear(config.id_emb_size, config.id_emb_size, bias=False)
-        self.attention_linear = nn.Linear(config.id_emb_size, 1)
-        self.fc_layer = nn.Linear(config.filters_num, config.id_emb_size)
+        self.review_linear = nn.Linear(config.filters_num, config.id_emb_dim)
+        self.id_linear = nn.Linear(config.id_emb_dim, config.id_emb_dim, bias=False)
+        self.attention_linear = nn.Linear(config.id_emb_dim, 1)
+        self.fc_layer = nn.Linear(config.filters_num, config.id_emb_dim)
 
         self.dropout = nn.Dropout(config.drop_out)
         self.init_param()
