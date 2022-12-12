@@ -5,9 +5,9 @@ import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 
-class TRANSFORMERS(nn.Module):
+class TRANSFORMER(nn.Module):
     def __init__(self, config):
-        super(TRANSFORMERS, self).__init__()
+        super(TRANSFORMER, self).__init__()
         self.config = config
         # self.num_feature = 2
 
@@ -51,8 +51,8 @@ class Net(nn.Module):
         self.init_param()
 
     def init_param(self):
-        nn.init.xavier_normal_(self.transformersLayer.weight)
-        nn.init.constant_(self.transformersLayer.bias, 0.1)
+        # nn.init.xavier_normal_(self.transformersLayer.weight)
+        # nn.init.constant_(self.transformersLayer.bias, 0.1)
 
         nn.init.uniform_(self.id_linear.weight, -0.1, 0.1)
 
@@ -64,15 +64,6 @@ class Net(nn.Module):
 
         nn.init.uniform_(self.fc_layer.weight, -0.1, 0.1)
         nn.init.constant_(self.fc_layer.bias, 0.1)
-
-        if self.config.use_word_embedding:
-            w2v = torch.from_numpy(np.load(self.opt.w2v_path))
-            if self.opt.use_gpu:
-                self.word_embs.weight.data.copy_(w2v.cuda())
-            else:
-                self.word_embs.weight.data.copy_(w2v)
-        else:
-            nn.init.xavier_normal_(self.summary_embedding.weight)
 
         nn.init.uniform_(self.id_embedding.weight, a=-0.1, b=0.1)
         nn.init.uniform_(self.u_i_id_embedding.weight, a=-0.1, b=0.1)
@@ -100,16 +91,15 @@ class Net(nn.Module):
         # --------transformers for summary--------------------
 
         # feature: [seq_num, seq_len, dim]
-        feature = F.relu(self.transformersLayer(summary))
+        feature = F.relu(self.transformersLayer(summary)).transpose(1,2)
 
         # feature: [seq_num, dim]
-        feature = F.max_pool1d(feature, feature.size(1)).squeeze(1)
+        feature = F.max_pool1d(feature, feature.size(2)).squeeze(2)
 
         # feature: [1, seq_num, dim]
         feature = feature.view(-1, num, feature.size(1))
 
         # ------------------linear attention-------------------------------
-
         # summary_linear_output: [1, seq_num, dim]
         summary_linear_output = self.summary_linear(feature)
 
@@ -123,9 +113,9 @@ class Net(nn.Module):
         att_score = self.attention_linear(rs_mix)
         # att_score: [1, seq_num, 1]
         att_weight = F.softmax(att_score, 1)
+
         # summary_feature_output: [1, seq_num, dim]
         summary_feature = feature * att_weight
-
         # summary_feature_output: [1, dim]
         summary_feature = summary_feature.sum(dim=1)
         summary_feature = self.dropout(summary_feature)
@@ -136,16 +126,17 @@ class Net(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, max_len=5000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout()
         self.config = config
 
-        pe = torch.zeros(config.max_sum_len, config.summary_dim).to(config.device)
-        position = torch.arange(0, config.max_sum_len, dtype=torch.float).unsqueeze(1)
+        pe = torch.zeros(max_len, config.summary_dim).to(config.device)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, config.summary_dim, 2).float() * (-math.log(10000.0) / config.summary_dim))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
+
         self.pe = pe.unsqueeze(0).transpose(0, 1)
 
     def forward(self, x):
@@ -159,9 +150,12 @@ class TransformerLayer(nn.Module):
         super(TransformerLayer, self).__init__()
         self.config = config
 
-        self.Embedding = nn.Embedding(config.vocab_size, config.emb_dim)
+        self.Embedding = nn.Embedding(config.vocab_size, config.feature_dim)
         self.posEmb = PositionalEncoding(config)
-        self.transformer = nn.Transformer(config.emb_dim, num_encoder_layers=6, num_decoder_layers=6, batch_first=True)
+        self.transformer = nn.Transformer(config.feature_dim, num_encoder_layers=6, num_decoder_layers=6, batch_first=True)
+
+    def init_params(self):
+        nn.init.xavier_normal_(self.summary_embedding.weight)
 
     def forward(self, summary):
         """
@@ -183,7 +177,6 @@ class TransformerLayer(nn.Module):
         # [seq_num, seq_len, wd]
         output = self.transformer(src, tgt, tgt_mask=tgt_mask,
                                   src_key_padding_mask=srcPaddingMask, tgt_key_padding_mask=tgtPaddingMask)
-        print(output.shape)
         return output
 
     @staticmethod
@@ -192,5 +185,5 @@ class TransformerLayer(nn.Module):
         用于padding_mask
         """
         paddingMask = torch.zeros(tokens.size())
-        paddingMask[tokens == 2] = -1e9
+        paddingMask[tokens == 100] = -1e9
         return paddingMask

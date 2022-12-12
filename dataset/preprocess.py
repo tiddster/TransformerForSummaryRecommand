@@ -179,7 +179,7 @@ class PreProcess():
         self.build_summary_tokens_id()
         self.build_id_info()
         self.build_specific_summary()
-        self.balance_dataset()
+        # self.balance_dataset()
         self.split_train_test()
 
 

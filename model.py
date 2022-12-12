@@ -7,12 +7,13 @@ class Model(nn.Module):
     def __init__(self, config, featuerLayer):
         super(Model, self).__init__()
 
+        self.featureLayer = featuerLayer(config).to(config.device)
+        self.fusionLayer = FusionLayer(config).to(config.device)
+
         self.config = config
         # 根据fusionLayer中的不同融合操作调整feature_dim
         self.config.feature_dim = 2 * 2 * config.id_emb_size
 
-        self.featureLayer = featuerLayer(config).to(config.device)
-        self.fusionLayer = FusionLayer(config).to(config.device)
         self.predictionLayer = PredictionLayer(config).to(config.device)
 
         self.dropout = nn.Dropout(self.config.drop_out)
