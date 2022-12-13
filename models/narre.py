@@ -9,7 +9,7 @@ class NARRE(nn.Module):
     def __init__(self, config):
         super(NARRE, self).__init__()
         self.config = config
-        # self.num_feature = 2
+        config = 2
 
         self.user_net = Net(config, 'user')
         self.item_net = Net(config, 'item')

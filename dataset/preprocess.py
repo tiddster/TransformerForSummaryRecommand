@@ -137,26 +137,27 @@ class PreProcess():
         new_data_list = []
         for data in self.data_list:
             rating = data["rating"]
-            if rating == 1 and one < max_num:
-                for i in range(4):
+            if rating == 1:
+                for i in range(26):
                     new_data_list.append(data)
                     one += 1
-            elif rating == 2 and two < max_num:
-                for i in range(3):
+            elif rating == 2:
+                for i in range(22):
                     new_data_list.append(data)
                     two += 1
-            elif rating == 3 and three < max_num:
-                for i in range(2):
+            elif rating == 3:
+                for i in range(9):
                     new_data_list.append(data)
                     three += 1
-            elif rating == 4 and four < max_num:
-                new_data_list.append(data)
-                four += 1
-            elif rating == 5 and four < max_num:
+            elif rating == 4:
+                for _ in range(4):
+                    new_data_list.append(data)
+                    four += 1
+            elif rating == 5:
                 new_data_list.append(data)
                 five += 1
         self.data_list = new_data_list
-        # print(one, two, three, four, five)
+        print(one, two, three, four, five)
 
     # ----------------------------------5---------------------------------------
     # 划分数据集

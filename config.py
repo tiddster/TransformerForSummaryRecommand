@@ -3,11 +3,13 @@ class Config():
     def __init__(self):
         self.num_heads = 4  # 多头注意力的头数
 
+        self.num_feature = 2
+
         self.vocab_size = 30522  # 词典大小
-        self.feature_dim = 256  # 特征的维度
-        self.summary_dim = 256
-        self.id_emb_dim = 256  # id嵌入层维度
-        self.after_fusion_dim = self.id_emb_dim * 2 * 2
+        self.feature_dim = 128  # 特征的维度
+        self.summary_dim = 128
+        self.id_emb_dim = 128  # id嵌入层维度
+        self.after_fusion_dim = self.id_emb_dim * self.num_feature * 2
         self.filters_num = 32
 
         self.data_list = None
