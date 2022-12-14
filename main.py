@@ -10,8 +10,7 @@ import dataset.preprocess as pre
 import models.narre as narre
 import models.tfui as trans
 from model import Model
-from models import mpcn
-
+from models import mpcn, tarmf
 
 def train(num_epoch):
     train_loss, val_loss = [], []
@@ -94,9 +93,10 @@ if __name__ == '__main__':
     train_iter, test_iter, val_iter, config = pre.get_dataiter()
 
     # narreM = narre.NARRE
-    mpcnM = mpcn.MPCN
+    # mpcnM = mpcn.MPCN
+    tarmfM = tarmf.TARMF
     #transM = trans.TRANSFORMER
-    model = Model(config, mpcnM).to(config.device)
+    model = Model(config, tarmfM).to(config.device)
 
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
@@ -107,10 +107,10 @@ if __name__ == '__main__':
 # # -------------------------------测试模型------------------------------------
 # if __name__ == '__main__':
 #     train_iter, test_iter, val_iter, config = pre.get_dataiter()
-#     mpcnM = mpcn.MPCN(config).to(config.device)
+#     tarmfM = tarmf.TARMF(config).to(config.device)
 #
 #     for data in train_iter:
-#         user_feature, item_feature = mpcnM(data)
+#         user_feature, item_feature = tarmfM(data)
 #         print(user_feature.shape)
 #         print(item_feature.shape)
 

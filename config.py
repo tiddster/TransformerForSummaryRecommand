@@ -20,11 +20,11 @@ class Config():
         self.self_att = True  # 是否在混合层中使用自注意力层
         self.use_word_embedding = False  # 是否使用预训练的词嵌入层
 
-        self.lr = 1e-4
+        self.lr = 3e-4
         self.weight_decay = 1e-3
         self.drop_out = 0.5
 
-        self.predictionLayerOutputType = 'fm'
+        self.predictionLayerOutputType = 'lfm'
         self.r_id_merge = 'else'
         self.ui_merge = 'add'
         self.BERT_PATH = ""

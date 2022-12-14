@@ -185,5 +185,5 @@ class TransformerLayer(nn.Module):
         用于padding_mask
         """
         paddingMask = torch.zeros(tokens.size())
-        paddingMask[tokens == 100] = -1e9
+        paddingMask[tokens == 100] = -torch.inf
         return paddingMask

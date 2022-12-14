@@ -5,9 +5,9 @@ import torch.nn.functional as F
 from transformers import AutoConfig
 from transformers.models.bert.modeling_bert import BertEmbeddings
 
-class NARRE(nn.Module):
+class TARMF(nn.Module):
     def __init__(self, config):
-        super(NARRE, self).__init__()
+        super(TARMF, self).__init__()
         self.config = config
 
         self.user_net = Net(config, 'user')
@@ -36,7 +36,7 @@ class Net(nn.Module):
             ui_id_num = config.user_num
 
         self.id_embedding = nn.Embedding(id_num, config.id_emb_dim)
-        self.summary_embedding = nn.Embedding(config.vocab_size, config.summary_dim)
+        # self.summary_embedding = nn.Embedding(config.vocab_size, config.summary_dim)
 
         # bert_config = AutoConfig.from_pretrained(config.BERT_PATH)
         # self.summary_embedding2 = BertEmbeddings(bert_config)
@@ -44,20 +44,17 @@ class Net(nn.Module):
 
         self.u_i_id_embedding = nn.Embedding(ui_id_num, config.id_emb_dim)
 
-        self.cnn = nn.Conv2d(1, config.filters_num, (1, config.summary_dim))
+        self.rnn_mha = RNN_MHAttention(config)
 
-        self.review_linear = nn.Linear(config.filters_num, config.id_emb_dim)
+        self.review_linear = nn.Linear(config.feature_dim, config.id_emb_dim)
         self.id_linear = nn.Linear(config.id_emb_dim, config.id_emb_dim, bias=False)
         self.attention_linear = nn.Linear(config.id_emb_dim, 1)
-        self.fc_layer = nn.Linear(config.filters_num, config.id_emb_dim)
+        self.fc_layer = nn.Linear(config.feature_dim, config.id_emb_dim)
 
         self.dropout = nn.Dropout(config.drop_out)
         self.init_param()
 
     def init_param(self):
-        nn.init.xavier_normal_(self.cnn.weight)
-        nn.init.constant_(self.cnn.bias, 0.1)
-
         nn.init.uniform_(self.id_linear.weight, -0.1, 0.1)
 
         nn.init.uniform_(self.review_linear.weight, -0.1, 0.1)
@@ -69,14 +66,14 @@ class Net(nn.Module):
         nn.init.uniform_(self.fc_layer.weight, -0.1, 0.1)
         nn.init.constant_(self.fc_layer.bias, 0.1)
 
-        if self.config.use_word_embedding:
-            w2v = torch.from_numpy(np.load(self.opt.w2v_path))
-            if self.opt.use_gpu:
-                self.word_embs.weight.data.copy_(w2v.cuda())
-            else:
-                self.word_embs.weight.data.copy_(w2v)
-        else:
-            nn.init.xavier_normal_(self.summary_embedding.weight)
+        # if self.config.use_word_embedding:
+        #     w2v = torch.from_numpy(np.load(self.opt.w2v_path))
+        #     if self.opt.use_gpu:
+        #         self.word_embs.weight.data.copy_(w2v.cuda())
+        #     else:
+        #         self.word_embs.weight.data.copy_(w2v)
+        # else:
+        #     nn.init.xavier_normal_(self.summary_embedding.weight)
 
         nn.init.uniform_(self.id_embedding.weight, a=-0.1, b=0.1)
         nn.init.uniform_(self.u_i_id_embedding.weight, a=-0.1, b=0.1)
@@ -90,9 +87,9 @@ class Net(nn.Module):
         :return:
         """
         # --------------- word embedding ----------------------------------
-        summary = self.summary_embedding(summary)
-        bs, num, seq_len, wd = summary.size()
-        summary = summary.view(-1, seq_len, wd)
+        # summary = self.summary_embedding(summary)
+        # bs, num, seq_len, wd = summary.size()
+        bs, num, seq_len = summary.size()
 
         # ids:  [1, dim]
         id_emb = self.id_embedding(ids).squeeze(1)
@@ -102,13 +99,13 @@ class Net(nn.Module):
 
         # --------cnn for review--------------------
 
-        # feature: [seq_num, filter_num, seq_len]
-        feature = F.relu(self.cnn(summary.unsqueeze(1))).squeeze(3)
+        # feature: [seq_num, seq_len, dim]
+        feature = F.relu(self.rnn_mha(summary)).transpose(1, 2)
 
-        # feature: [seq_num, filter_num]
+        # feature: [seq_num, dim]
         feature = F.max_pool1d(feature, feature.size(2)).squeeze(2)
 
-        # feature: [1, seq_num, filter_num]
+        # feature: [1, seq_num, dim]
         feature = feature.view(-1, num, feature.size(1))
 
         # ------------------linear attention-------------------------------
@@ -138,3 +135,38 @@ class Net(nn.Module):
         summary_feature_output = self.fc_layer(summary_feature)
 
         return torch.stack([id_emb, summary_feature_output], dim=1)
+
+
+class RNN_MHAttention(nn.Module):
+    def __init__(self, config):
+        super(RNN_MHAttention, self).__init__()
+        self.config = config
+
+        self.summary_embedding = nn.Embedding(config.vocab_size, config.summary_dim)
+        self.lstm = nn.LSTM(config.summary_dim, config.feature_dim, batch_first=True)
+        self.mha = nn.MultiheadAttention(config.feature_dim, num_heads=config.num_heads, batch_first=True)
+
+    def init_params(self):
+        nn.init.xavier_normal_(self.summary_embedding.weight)
+        nn.init.xavier_normal_(self.lstm.weight)
+
+    def forward(self, summary):
+        summary = summary.squeeze(0)
+
+        tgt_mask = nn.Transformer.generate_square_subsequent_mask(summary.size()[-1]).bool().to(self.config.device)
+        paddingMask = RNN_MHAttention.getPaddingMask(summary).to(self.config.device)
+
+        summary_embs_output = self.summary_embedding(summary)
+
+        lstm_output,(_, _) = self.lstm(summary_embs_output)
+        mha_output, _ = self.mha(lstm_output, lstm_output, lstm_output, key_padding_mask=paddingMask, attn_mask=tgt_mask)
+
+        return mha_output
+
+    def getPaddingMask(tokens):
+        """
+        用于padding_mask
+        """
+        paddingMask = torch.zeros(tokens.size())
+        paddingMask[tokens == 100] = -torch.inf
+        return paddingMask

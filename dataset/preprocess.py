@@ -45,16 +45,19 @@ class PreProcess():
     def build_summary_tokens_id(self):
         print("-----转换summary-----")
         data_list = self.data_list
-        self.max_sum_len = 0
+        self.max_sum_len = 10
         for data in data_list:
             summary = data["summary"]
             sum_tokens = tokenizer.tokenize(summary)
-            self.max_sum_len = max(self.max_sum_len, len(sum_tokens))
+            # self.max_sum_len = max(self.max_sum_len, len(sum_tokens))
 
         for i in range(len(data_list)):
             summary = data_list[i]["summary"].lower()
             sum_tokens = ['[CLS]'] + tokenizer.tokenize(summary) + ['[SEP]']
-            sum_tokens = sum_tokens + ['[PAD] '] * (self.max_sum_len + 2 - len(sum_tokens))
+            if len(sum_tokens) <= self.max_sum_len+2:
+                sum_tokens = sum_tokens + ['[PAD] '] * (self.max_sum_len + 2 - len(sum_tokens))
+            else:
+                sum_tokens = sum_tokens[:self.max_sum_len+1] + ['[SEP]']
             sum_token_ids = tokenizer.convert_tokens_to_ids(sum_tokens)
 
             data_list[i]["summary_id"] = sum_token_ids
@@ -138,7 +141,7 @@ class PreProcess():
         for data in self.data_list:
             rating = data["rating"]
             if rating == 1:
-                for i in range(26):
+                for i in range(24):
                     new_data_list.append(data)
                     one += 1
             elif rating == 2:
@@ -150,7 +153,7 @@ class PreProcess():
                     new_data_list.append(data)
                     three += 1
             elif rating == 4:
-                for _ in range(4):
+                for _ in range(3):
                     new_data_list.append(data)
                     four += 1
             elif rating == 5:
