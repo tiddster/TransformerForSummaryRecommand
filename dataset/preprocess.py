@@ -26,6 +26,7 @@ class PreProcess():
         self.val_data_list = None
 
         self.max_sum_len = None
+        self.avg_sum_len = None
 
         self.data_list = self.read_json()
 
@@ -45,19 +46,27 @@ class PreProcess():
     def build_summary_tokens_id(self):
         print("-----转换summary-----")
         data_list = self.data_list
-        self.max_sum_len = 10
+
+        summary_total_len = 0
+        max_sum_len = 0
+
         for data in data_list:
             summary = data["summary"]
             sum_tokens = tokenizer.tokenize(summary)
-            # self.max_sum_len = max(self.max_sum_len, len(sum_tokens))
+            summary_total_len += len(sum_tokens)
+            self.max_sum_len = max(max_sum_len, len(sum_tokens))
+
+        self.avg_sum_len = summary_total_len // len(data_list)
+        self.max_sum_len = max_sum_len
 
         for i in range(len(data_list)):
             summary = data_list[i]["summary"].lower()
-            sum_tokens = ['[CLS]'] + tokenizer.tokenize(summary) + ['[SEP]']
-            if len(sum_tokens) <= self.max_sum_len+2:
-                sum_tokens = sum_tokens + ['[PAD] '] * (self.max_sum_len + 2 - len(sum_tokens))
+            sum_tokens = tokenizer.tokenize(summary)
+            if len(sum_tokens) < self.avg_sum_len:
+                sum_tokens = sum_tokens + ['[SEP]'] + ['[PAD]'] * (self.avg_sum_len - len(sum_tokens))
             else:
-                sum_tokens = sum_tokens[:self.max_sum_len+1] + ['[SEP]']
+                sum_tokens = sum_tokens[:self.avg_sum_len] + ['[SEP]']
+            sum_tokens = ['[CLS]'] + sum_tokens
             sum_token_ids = tokenizer.convert_tokens_to_ids(sum_tokens)
 
             data_list[i]["summary_id"] = sum_token_ids
@@ -131,38 +140,77 @@ class PreProcess():
             self.data_list[i]["user2itemList"] = user2itemList[user_id]
             self.data_list[i]["item2userList"] = item2userList[item_id]
 
+    # ----------------------------------4---------------------------------------
+    # 若batch_size = 1, 则通过该函数将每一个all_summary中的summary统一
+    def balance_summary_len(self):
+        print("-----统一summary长度-----")
+        for i, data in enumerate(self.data_list):
+            # 统一user_all_summary的长度
+            user_all_summary = self.data_list[i]["user_all_summary"]
+            user_sum_max_len = 0
+            user_sum_avg_len = 0
+            for summary in user_all_summary:
+                user_sum_avg_len += len(summary)
+                user_sum_max_len = max(len(summary), user_sum_max_len)
+            user_sum_avg_len = user_sum_avg_len // len(user_all_summary)
+
+            for i, summary_ids in enumerate(user_all_summary):
+                if len(summary_ids) < user_sum_max_len:
+                    user_all_summary[i] = [101] + summary_ids + [102] + [100] * (user_sum_max_len - len(summary_ids))
+                else:
+                    user_all_summary[i] = [101] + summary_ids[:user_sum_max_len] + [102]
+
+            self.data_list[i]["user_all_summary"] = user_all_summary
+
+            # 统一item_all_summary的长度
+            item_all_summary = self.data_list[i]["item_all_summary"]
+            item_sum_max_len = 0
+            item_sum_avg_len = 0
+            for summary in item_all_summary:
+                item_sum_avg_len += len(summary)
+                item_sum_max_len = max(len(summary), item_sum_max_len)
+            item_sum_avg_len = item_sum_avg_len // len(item_all_summary)
+
+            for i, summary_ids in enumerate(item_all_summary):
+                if len(summary_ids) < item_sum_max_len:
+                    item_all_summary[i] = [101] + summary_ids + [102] + [100] * (item_sum_max_len - len(summary_ids))
+                else:
+                    item_all_summary[i] = [101] + summary_ids[:item_sum_max_len] + [102]
+
+            self.data_list[i]["item_all_summary"] = item_all_summary
+
     # ----------------------------------5---------------------------------------
-    # 数据集不平衡，比例为 542 606 1430 3967  13928
+    # 数据集不平衡，比例为 542 606 1430 3967 13928
     def balance_dataset(self):
         # 输出数据集的数量
         one, two, three, four, five = 0, 0, 0, 0, 0
-        max_num = 1000
+        max_num = 2000  #控制一下数据集的大小
         new_data_list = []
         for data in self.data_list:
             rating = data["rating"]
             if rating == 1:
-                for i in range(24):
+                for _ in range(3):
                     new_data_list.append(data)
                     one += 1
             elif rating == 2:
-                for i in range(22):
+                for _ in range(2):
                     new_data_list.append(data)
                     two += 1
             elif rating == 3:
-                for i in range(9):
+                for _ in range(1):
                     new_data_list.append(data)
                     three += 1
-            elif rating == 4:
+            elif rating == 4 and four < max_num:
                 for _ in range(3):
                     new_data_list.append(data)
                     four += 1
-            elif rating == 5:
+            elif rating == 5 and five < max_num+100:
                 new_data_list.append(data)
                 five += 1
         self.data_list = new_data_list
         print(one, two, three, four, five)
 
-    # ----------------------------------5---------------------------------------
+    # ----------------------------------6---------------------------------------
     # 划分数据集
     def split_train_test(self):
         print("-----划分数据集-----")
@@ -177,13 +225,13 @@ class PreProcess():
         self.test_data_list = self.data_list[train_len:train_len + test_len]
         self.val_data_list = self.data_list[train_len + test_len:]
 
-    # ----------------------------------5----------------------------------------
     # 总操作
     def main_preprocess(self):
         self.build_summary_tokens_id()
         self.build_id_info()
         self.build_specific_summary()
-        self.balance_dataset()
+        # self.balance_summary_len()
+        # self.balance_dataset()
         self.split_train_test()
 
 
@@ -231,6 +279,7 @@ def init_config(p):
     config.item_num = len(p.item_dict)+1
     config.data_list = p.data_list
     config.BERT_PATH = BERT_PATH
-    config.max_sum_len = p.max_sum_len
+    # config.max_sum_len = p.max_sum_len + 2
+    # config.avg_sum_len = p.avg_sum_len + 2
 
     return config

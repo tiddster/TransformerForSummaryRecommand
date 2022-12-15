@@ -10,7 +10,7 @@ import dataset.preprocess as pre
 import models.narre as narre
 import models.tfui as trans
 from model import Model
-from models import mpcn, tarmf
+from models import mpcn, tarmf, tfui
 
 def train(num_epoch):
     train_loss, val_loss = [], []
@@ -25,7 +25,7 @@ def train(num_epoch):
             rating = torch.tensor(rating, dtype=torch.float).to(config.device)
             output = model(data)
 
-            loss = criterion(output, rating)
+            loss = mse_criterion(output, rating)
 
             optimizer.zero_grad()
             loss.backward()
@@ -46,7 +46,7 @@ def train(num_epoch):
             rating = torch.tensor(rating, dtype=torch.float).to(config.device)
             output = model(data)
 
-            loss = criterion(output, rating)
+            loss = mse_criterion(output, rating)
 
             val_total_loss += loss.item()
             val_total_num += rating.shape[0]
@@ -80,8 +80,8 @@ def train(num_epoch):
 def loss_plot(train_loss, val_loss, epoch_num):
     x = range(0, epoch_num, 1)
     # plt.figure()
-    plt.plot(train_loss, x)
-    plt.plot(val_loss, x)
+    plt.plot(x, train_loss)
+    plt.plot(x, val_loss)
     # plt.xlabel('feature_num')
     # plt.ylabel('test_accuracy')
     # plt.legend()
@@ -94,11 +94,13 @@ if __name__ == '__main__':
 
     # narreM = narre.NARRE
     # mpcnM = mpcn.MPCN
-    tarmfM = tarmf.TARMF
-    #transM = trans.TRANSFORMER
-    model = Model(config, tarmfM).to(config.device)
+    # tarmfM = tarmf.TARMF
+    transM = trans.TRANSFORMER
+    model = Model(config, transM).to(config.device)
 
-    criterion = nn.MSELoss()
+    mse_criterion = nn.MSELoss()
+    # mae_criterion = nn.L1Loss()
+    # smooth_mae_criterion = nn.SmoothL1Loss()
     optimizer = optim.Adam(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
 
     train_loss, val_loss = train(num_epoch)
@@ -107,10 +109,8 @@ if __name__ == '__main__':
 # # -------------------------------测试模型------------------------------------
 # if __name__ == '__main__':
 #     train_iter, test_iter, val_iter, config = pre.get_dataiter()
-#     tarmfM = tarmf.TARMF(config).to(config.device)
+#     transM = tfui.TRANSFORMER(config).to(config.device)
 #
 #     for data in train_iter:
-#         user_feature, item_feature = tarmfM(data)
-#         print(user_feature.shape)
-#         print(item_feature.shape)
+#         user_feature, item_feature = transM(data)
 

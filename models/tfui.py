@@ -2,14 +2,13 @@ import math
 
 import torch
 import torch.nn as nn
-import numpy as np
 import torch.nn.functional as F
 
 class TRANSFORMER(nn.Module):
     def __init__(self, config):
         super(TRANSFORMER, self).__init__()
         self.config = config
-        # self.num_feature = 2
+        self.config.num_feature = 1
 
         self.user_net = Net(config, 'user')
         self.item_net = Net(config, 'item')
@@ -29,44 +28,15 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.config = config
 
-        if user_or_item == 'user':
-            id_num = config.user_num
-            ui_id_num = config.item_num
-        elif user_or_item == 'item':
-            id_num = config.item_num
-            ui_id_num = config.user_num
-
-        self.id_embedding = nn.Embedding(id_num, config.id_emb_dim)
-        self.u_i_id_embedding = nn.Embedding(ui_id_num, config.id_emb_dim)
-        # self.summary_embedding = nn.Embedding(config.vocab_size, config.summary_dim)
-
         self.transformersLayer = TransformerLayer(config)
 
-        self.summary_linear = nn.Linear(config.feature_dim, config.id_emb_dim)
-        self.id_linear = nn.Linear(config.id_emb_dim, config.id_emb_dim, bias=False)
         self.attention_linear = nn.Linear(config.id_emb_dim, 1)
-        self.fc_layer = nn.Linear(config.feature_dim, config.id_emb_dim)
 
-        self.dropout = nn.Dropout(config.drop_out)
         self.init_param()
 
     def init_param(self):
-        # nn.init.xavier_normal_(self.transformersLayer.weight)
-        # nn.init.constant_(self.transformersLayer.bias, 0.1)
-
-        nn.init.uniform_(self.id_linear.weight, -0.1, 0.1)
-
-        nn.init.uniform_(self.summary_linear.weight, -0.1, 0.1)
-        nn.init.constant_(self.summary_linear.bias, 0.1)
-
         nn.init.uniform_(self.attention_linear.weight, -0.1, 0.1)
         nn.init.constant_(self.attention_linear.bias, 0.1)
-
-        nn.init.uniform_(self.fc_layer.weight, -0.1, 0.1)
-        nn.init.constant_(self.fc_layer.bias, 0.1)
-
-        nn.init.uniform_(self.id_embedding.weight, a=-0.1, b=0.1)
-        nn.init.uniform_(self.u_i_id_embedding.weight, a=-0.1, b=0.1)
 
     def forward(self, summary, ids, ids_list):
         """
@@ -81,48 +51,25 @@ class Net(nn.Module):
         # bs, num, seq_len, wd = summary.size()
         # summary = summary.view(-1, seq_len, wd)
         bs, num, seq_len = summary.size()
-
-        # ids:  [1, dim]
-        id_emb = self.id_embedding(ids).squeeze(1)
-
-        # uiid_emb_output:  [1, seq_num, dim]
-        uiid_emb_output = self.u_i_id_embedding(ids_list)
-
         # --------transformers for summary--------------------
-
         # feature: [seq_num, seq_len, dim]
         feature = F.relu(self.transformersLayer(summary)).transpose(1,2)
-
         # feature: [seq_num, dim]
         feature = F.max_pool1d(feature, feature.size(2)).squeeze(2)
-
         # feature: [1, seq_num, dim]
         feature = feature.view(-1, num, feature.size(1))
 
         # ------------------linear attention-------------------------------
         # summary_linear_output: [1, seq_num, dim]
-        summary_linear_output = self.summary_linear(feature)
-
-        # id_linear_output: [1, seq_num, dim]
-        id_linear_output = self.id_linear(F.relu(uiid_emb_output))
-
-        # rs_mix: [1, seq_num, dim]
-        rs_mix = F.relu(summary_linear_output + id_linear_output)
-
         # att_score: [1, seq_num, 1]
-        att_score = self.attention_linear(rs_mix)
-        # att_score: [1, seq_num, 1]
-        att_weight = F.softmax(att_score, 1)
+        att_score = self.attention_linear(feature)
+        # att_weight: [1, seq_num, 1]
+        att_weight = F.softmax(att_score, dim=1)
 
         # summary_feature_output: [1, seq_num, dim]
-        summary_feature = feature * att_weight
-        # summary_feature_output: [1, dim]
-        summary_feature = summary_feature.sum(dim=1)
-        summary_feature = self.dropout(summary_feature)
-        # # summary_feature_output: [1, dim]
-        # summary_feature_output = self.fc_layer(summary_feature)
+        summary_feature = att_weight.transpose(1, 2) @ feature
 
-        return torch.stack([id_emb, summary_feature], dim=1)
+        return summary_feature
 
 
 class PositionalEncoding(nn.Module):
@@ -185,5 +132,5 @@ class TransformerLayer(nn.Module):
         用于padding_mask
         """
         paddingMask = torch.zeros(tokens.size())
-        paddingMask[tokens == 100] = -torch.inf
+        paddingMask[tokens == 0] = -torch.inf
         return paddingMask

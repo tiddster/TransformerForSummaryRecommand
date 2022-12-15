@@ -15,16 +15,17 @@ class Config():
         self.data_list = None
         self.user_num = 0  # 用户的数量
         self.item_num = 0  # 评论数量
-        self.max_sum_len = 0 # 最大summary长度
+        # self.max_sum_len = 0 # 最大summary长度
+        # self.avg_sum_len = 0 # 平均summary长度
 
         self.self_att = True  # 是否在混合层中使用自注意力层
         self.use_word_embedding = False  # 是否使用预训练的词嵌入层
 
-        self.lr = 3e-4
+        self.lr = 2e-3
         self.weight_decay = 1e-3
         self.drop_out = 0.5
 
-        self.predictionLayerOutputType = 'lfm'
+        self.predictionLayerOutputType = 'fm'
         self.r_id_merge = 'else'
         self.ui_merge = 'add'
         self.BERT_PATH = ""
