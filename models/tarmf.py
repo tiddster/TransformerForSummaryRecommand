@@ -9,6 +9,7 @@ class TARMF(nn.Module):
     def __init__(self, config):
         super(TARMF, self).__init__()
         self.config = config
+        self.config.num_feature = 1
 
         self.user_net = Net(config, 'user')
         self.item_net = Net(config, 'item')
@@ -91,50 +92,27 @@ class Net(nn.Module):
         # bs, num, seq_len, wd = summary.size()
         bs, num, seq_len = summary.size()
 
-        # ids:  [1, dim]
-        id_emb = self.id_embedding(ids).squeeze(1)
-
-        # uiid_emb_output:  [1, seq_num, dim]
-        uiid_emb_output = self.u_i_id_embedding(ids_list)
-
         # --------cnn for review--------------------
 
+        # --------transformers for summary--------------------
         # feature: [seq_num, seq_len, dim]
         feature = F.relu(self.rnn_mha(summary)).transpose(1, 2)
-
         # feature: [seq_num, dim]
         feature = F.max_pool1d(feature, feature.size(2)).squeeze(2)
-
         # feature: [1, seq_num, dim]
         feature = feature.view(-1, num, feature.size(1))
 
         # ------------------linear attention-------------------------------
-
-        # review_linear_output: [1, seq_num, dim]
-        review_linear_output = self.review_linear(feature)
-
-        # id_linear_output: [1, seq_num, dim]
-        id_linear_output = self.id_linear(F.relu(uiid_emb_output))
-
-        # rs_mix: [1, seq_num, dim]
-        rs_mix = F.relu(review_linear_output + id_linear_output)
-
+        # summary_linear_output: [1, seq_num, dim]
         # att_score: [1, seq_num, 1]
-        att_score = self.attention_linear(rs_mix)
+        att_score = self.attention_linear(feature)
+        # att_weight: [1, seq_num, 1]
+        att_weight = F.softmax(att_score, dim=1)
 
-        # att_score: [1, seq_num, 1]
-        att_weight = F.softmax(att_score, 1)
+        # summary_feature: [1, dim]
+        summary_feature = att_weight.transpose(1, 2) @ feature
 
-        # summary_feature_output: [1, seq_num, filter_num]
-        summary_feature = feature * att_weight
-
-        # summary_feature_output: [1, filter_num]
-        summary_feature = summary_feature.sum(1)
-        summary_feature = self.dropout(summary_feature)
-        # summary_feature_output: [1, dim]
-        summary_feature_output = self.fc_layer(summary_feature)
-
-        return torch.stack([id_emb, summary_feature_output], dim=1)
+        return summary_feature
 
 
 class RNN_MHAttention(nn.Module):

@@ -94,9 +94,9 @@ if __name__ == '__main__':
 
     # narreM = narre.NARRE
     # mpcnM = mpcn.MPCN
-    # tarmfM = tarmf.TARMF
-    transM = trans.TRANSFORMER
-    model = Model(config, transM).to(config.device)
+    tarmfM = tarmf.TARMF
+    # transM = trans.TRANSFORMER
+    model = Model(config, tarmfM).to(config.device)
 
     mse_criterion = nn.MSELoss()
     # mae_criterion = nn.L1Loss()
