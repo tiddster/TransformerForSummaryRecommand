@@ -6,9 +6,9 @@ class Config():
         self.num_feature = 2
 
         self.vocab_size = 30522  # 词典大小
-        self.feature_dim = 50  # 特征的维度
-        self.summary_dim = 50
-        self.id_emb_dim = 50  # id嵌入层维度
+        self.feature_dim = 64 # 特征的维度
+        self.summary_dim = 64
+        self.id_emb_dim = 64  # id嵌入层维度
         self.after_fusion_dim = self.id_emb_dim * self.num_feature * 2
         self.filters_num = 32
 
@@ -29,6 +29,7 @@ class Config():
         self.r_id_merge = 'else'
         self.ui_merge = 'add'
         self.BERT_PATH = ""
+        self.lossType = "rmse" # "rmse" or "mse"
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(torch.cuda.get_device_name())
