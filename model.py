@@ -1,6 +1,6 @@
 from framework.fusion import FusionLayer
 from framework.recommend_model import PredictionLayer
-
+from framework.fm import FM
 import torch.nn as nn
 
 class Model(nn.Module):
@@ -14,7 +14,7 @@ class Model(nn.Module):
         # 根据fusionLayer中的不同融合操作调整feature_dim
         self.config.feature_dim = 2 * config.num_feature * config.id_emb_dim
 
-        self.predictionLayer = PredictionLayer(config).to(config.device)
+        self.predictionLayer = FM(config).to(config.device)
 
         self.dropout = nn.Dropout(self.config.drop_out)
 

@@ -16,7 +16,7 @@ from models import mpcn, tarmf, tfui
 def train(num_epoch):
     train_loss, val_loss = [], []
     for epoch in range(num_epoch):
-        result = ""
+        result = f"epoch: {epoch}  ====>  "
         start = time.time()
         # ---------------------------训练模式--------------------------------
         train_total_loss, train_total_num = 0.0, 0
@@ -113,10 +113,11 @@ if __name__ == '__main__':
     train_iter, test_iter, val_iter, config = pre.get_dataiter()
 
     narreM = narre.NARRE
-    # mpcnM = mpcn.MPCN
-    # tarmfM = tarmf.TARMF
-    # transM = trans.TRANSFORMER
-    model = Model(config, narreM).to(config.device)
+    mpcnM = mpcn.MPCN
+    tarmfM = tarmf.TARMF
+    transM = trans.TRANSFORMER
+
+    model = Model(config, tarmfM).to(config.device)
     lossType = config.lossType
 
     mse_criterion = nn.MSELoss()
