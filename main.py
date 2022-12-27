@@ -16,7 +16,7 @@ from models import mpcn, tarmf, tfui
 def train(num_epoch):
     train_loss, val_loss = [], []
     for epoch in range(num_epoch):
-        result = f"epoch: {epoch}  ====>  "
+        result = f"epoch: {epoch+1}  ====>  "
         start = time.time()
         # ---------------------------训练模式--------------------------------
         train_total_loss, train_total_num = 0.0, 0
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     tarmfM = tarmf.TARMF
     transM = trans.TRANSFORMER
 
-    model = Model(config, tarmfM).to(config.device)
+    model = Model(config, transM).to(config.device)
     lossType = config.lossType
 
     mse_criterion = nn.MSELoss()

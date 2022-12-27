@@ -1,3 +1,4 @@
+from framework.afm import AFM
 from framework.fusion import FusionLayer
 from framework.recommend_model import PredictionLayer
 from framework.fm import FM
@@ -11,10 +12,10 @@ class Model(nn.Module):
         self.fusionLayer = FusionLayer(config).to(config.device)
 
         self.config = config
-        # 根据fusionLayer中的不同融合操作调整feature_dim
-        self.config.feature_dim = 2 * config.num_feature * config.id_emb_dim
+        # 根据fusionLayer中的不同融合操作调整feature_dim = after_fusion_dim
+        self.config.after_fusion_dim = 2 * config.num_feature * config.id_emb_dim
 
-        self.predictionLayer = FM(config).to(config.device)
+        self.predictionLayer = AFM(config).to(config.device)
 
         self.dropout = nn.Dropout(self.config.drop_out)
 
