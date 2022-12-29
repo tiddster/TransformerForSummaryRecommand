@@ -8,7 +8,7 @@ class AFM(nn.Module):
         super(AFM, self).__init__()
         self.config = config
         self.dim = config.after_fusion_dim
-        self.k = 10
+        self.k = 20
 
         self.fc = nn.Linear(config.after_fusion_dim, self.k )
 

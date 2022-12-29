@@ -23,7 +23,7 @@ class PreProcess():
 
         self.train_data_list = None
         self.test_data_list = None
-        self.val_data_list = None
+        # self.val_data_list = None
 
         self.max_sum_len = None
         self.avg_sum_len = None
@@ -62,10 +62,10 @@ class PreProcess():
         for i in range(len(data_list)):
             summary = data_list[i]["summary"].lower()
             sum_tokens = tokenizer.tokenize(summary)
-            if len(sum_tokens) < self.avg_sum_len:
+            if len(sum_tokens) < self.max_sum_len:
                 sum_tokens = sum_tokens + ['[SEP]'] + ['[PAD]'] * (self.avg_sum_len - len(sum_tokens))
             else:
-                sum_tokens = sum_tokens[:self.avg_sum_len] + ['[SEP]']
+                sum_tokens = sum_tokens[:self.max_sum_len] + ['[SEP]']
             sum_tokens = ['[CLS]'] + sum_tokens
             sum_token_ids = tokenizer.convert_tokens_to_ids(sum_tokens)
 
@@ -215,15 +215,15 @@ class PreProcess():
     def split_train_test(self):
         print("-----划分数据集-----")
         data_len = len(self.data_list)
-        train_len = int(data_len * 0.6)
+        train_len = int(data_len * 0.8)
         test_len = int(data_len * 0.2)
-        val_len = int(data_len * 0.2)
+        # val_len = int(data_len * 0.2)
 
         random.shuffle(self.data_list)
 
         self.train_data_list = self.data_list[:train_len]
-        self.test_data_list = self.data_list[train_len:train_len + test_len]
-        self.val_data_list = self.data_list[train_len + test_len:]
+        self.test_data_list = self.data_list[train_len:]
+        # self.val_data_list = self.data_list[train_len + test_len:]
 
     # 总操作
     def main_preprocess(self):
@@ -264,13 +264,13 @@ def get_dataiter():
 
     train_dataset = AutomotiveDataset(p.train_data_list)
     test_dataset = AutomotiveDataset(p.test_data_list)
-    val_dataset = AutomotiveDataset(p.val_data_list)
+    # val_dataset = AutomotiveDataset(p.val_data_list)
 
     train_iter = DataLoader(train_dataset, batch_size=1, shuffle=True)
     test_iter = DataLoader(test_dataset, batch_size=1, shuffle=False)
-    val_iter = DataLoader(val_dataset, batch_size=1, shuffle=False)
+    # val_iter = DataLoader(val_dataset, batch_size=1, shuffle=False)
 
-    return train_iter, test_iter, val_iter, config
+    return train_iter, test_iter, config
 
 
 def init_config(p):

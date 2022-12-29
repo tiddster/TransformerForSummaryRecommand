@@ -99,7 +99,7 @@ class TransformerLayer(nn.Module):
 
         self.Embedding = nn.Embedding(config.vocab_size, config.feature_dim)
         self.posEmb = PositionalEncoding(config)
-        self.transformer = nn.Transformer(config.feature_dim, num_encoder_layers=6, num_decoder_layers=6, batch_first=True)
+        self.transformer = nn.Transformer(config.feature_dim, num_encoder_layers=4, num_decoder_layers=4, nhead=config.num_heads, batch_first=True)
 
     def init_params(self):
         nn.init.xavier_normal_(self.summary_embedding.weight)
