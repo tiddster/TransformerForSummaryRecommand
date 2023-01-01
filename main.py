@@ -110,16 +110,22 @@ def train(train_info_data=None):
             # rating_list.append(rating_item)
             # output_list.append(output_item)
 
+        if torch.any(torch.isnan(loss)):
+            print("过拟合")
+            break
+
         # test_acc = test_total_acc / test_total_num
         test_loss = test_total_loss / test_total_num
-        min_test_loss = min(test_loss, min_test_loss)
 
         result += f"test_loss:{test_loss}"
         end = time.time()
         result += f" time: {end - start}"
         print(result)
-        train_info_data = {"epoch": num_epoch, "train_loss_list": train_loss_list, "min_test_loss": min_test_loss,"loss_up_num": loss_up_num}
-        save_model(model, train_info_data, "Transformer_AFM_32_4")
+
+        min_test_loss = min(test_loss, min_test_loss)
+        train_info_data = {"epoch": num_epoch, "train_loss_list": train_loss_list, "min_test_loss": min_test_loss,
+                           "loss_up_num": loss_up_num}
+        save_model(model, train_info_data, model_name)
 
 
 def loss_plot(train_loss, val_loss=None, epoch_num=0):
@@ -166,6 +172,7 @@ def load_model(model, filename):
 
 if __name__ == '__main__':
     # num_epoch = 0
+    model_name = "Transformer_AFM_64_4"
     train_iter, test_iter, config = pre.get_dataiter()
 
     narreM = narre.NARRE
@@ -175,7 +182,7 @@ if __name__ == '__main__':
 
     model = Model(config, transM).to(config.device)
     train_info_data = None
-    model, train_info_data = load_model(model, "Transformer_AFM_32_4")
+    # model, train_info_data = load_model(model, model_name)
     lossType = config.lossType
 
     mse_criterion = nn.MSELoss()

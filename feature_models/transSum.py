@@ -66,10 +66,10 @@ class Net(nn.Module):
         # att_weight: [1, seq_num, 1]
         att_weight = F.softmax(att_score, dim=1)
 
-        # summary_feature_output: [1, seq_num, dim]
-        summary_feature = att_weight.transpose(1, 2) @ feature
+        # summary_feature_output: [1, 1, seq_num] @ [1, seq_num, dim] = [1, dim]
+        summary_feature_output = att_weight.transpose(1, 2) @ feature
 
-        return summary_feature
+        return summary_feature_output
 
 
 class PositionalEncoding(nn.Module):
