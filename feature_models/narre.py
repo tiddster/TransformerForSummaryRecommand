@@ -9,6 +9,8 @@ class NARRE(nn.Module):
     def __init__(self, config):
         super(NARRE, self).__init__()
         self.config = config
+        self.config.num_feature = 2
+        self.config.predictionLayerType = 'fm'
 
         self.user_net = Net(config, 'user')
         self.item_net = Net(config, 'item')
@@ -69,14 +71,14 @@ class Net(nn.Module):
         nn.init.uniform_(self.fc_layer.weight, -0.1, 0.1)
         nn.init.constant_(self.fc_layer.bias, 0.1)
 
-        if self.config.use_word_embedding:
-            w2v = torch.from_numpy(np.load(self.opt.w2v_path))
-            if self.opt.use_gpu:
-                self.word_embs.weight.data.copy_(w2v.cuda())
-            else:
-                self.word_embs.weight.data.copy_(w2v)
-        else:
-            nn.init.xavier_normal_(self.summary_embedding.weight)
+        # if self.config.use_word_embedding:
+        #     w2v = torch.from_numpy(np.load(self.opt.w2v_path))
+        #     if self.opt.use_gpu:
+        #         self.word_embs.weight.data.copy_(w2v.cuda())
+        #     else:
+        #         self.word_embs.weight.data.copy_(w2v)
+        # else:
+        nn.init.xavier_normal_(self.summary_embedding.weight)
 
         nn.init.uniform_(self.id_embedding.weight, a=-0.1, b=0.1)
         nn.init.uniform_(self.u_i_id_embedding.weight, a=-0.1, b=0.1)

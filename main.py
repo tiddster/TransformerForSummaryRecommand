@@ -8,9 +8,9 @@ from tqdm import tqdm
 
 import dataset.preprocess as pre
 import feature_models.narre as narre
-import feature_models.transSum as trans
+import feature_models.transSummary as trans
 from model import Model
-from feature_models import mpcn, tarmf, transSum
+from feature_models import mpcn, tarmf, transSummary
 
 import json
 
@@ -29,6 +29,8 @@ def train(train_info_data=None):
 
     # for epoch in range(num_epoch):
     while loss_up_num <= 3:
+        is_model_save = True    # 根据train_loss是否下降判断是否保存模型
+        is_train_stop = False  # 若两次loss小于1e-6则提前结束训练
         num_epoch += 1
         result = f"epoch: {num_epoch}  ====>  "
         start = time.time()
@@ -36,7 +38,7 @@ def train(train_info_data=None):
         train_total_loss, train_total_num = 0.0, 0
         model.train()
         for data in tqdm(train_iter):
-            user_id, item_id, user2itemList, item2userList, rating, user_all_summary, item_all_summary = data
+            _, _, _, _, rating, _, _ = data
             rating = torch.tensor(rating, dtype=torch.float).to(config.device)
             output = model(data)
 
@@ -55,12 +57,20 @@ def train(train_info_data=None):
             train_total_loss += loss.item()
             train_total_num += rating.shape[0]
 
-        avg_loss = train_total_loss / train_total_num
-        result += f"train_loss: {avg_loss}  "
-        train_loss_list.append(avg_loss)
+        train_loss = train_total_loss / train_total_num
+        result += f"train_loss: {train_loss}  "
 
-        if avg_loss > train_loss_list[-1]:
+        # 如果train_loss比上次的大，则不保存模型，loss_up_num+1
+        if train_loss > train_loss_list[-1]:
             loss_up_num += 1
+            is_model_save = False
+        else:
+            train_loss_list.append(train_loss)
+            is_model_save = True
+
+        # 如果两次loss相差小于1e-6, 则提前结束
+        if abs(train_loss - train_loss_list[-1]) < 1e-6:
+            is_train_stop = True
 
         # ---------------------------验证模式--------------------------------
         # model.eval()
@@ -110,22 +120,31 @@ def train(train_info_data=None):
             # rating_list.append(rating_item)
             # output_list.append(output_item)
 
-        if torch.any(torch.isnan(loss)):
-            print("过拟合")
-            break
-
         # test_acc = test_total_acc / test_total_num
         test_loss = test_total_loss / test_total_num
-
         result += f"test_loss:{test_loss}"
+        # ---------------------------最后处理--------------------------------
         end = time.time()
         result += f" time: {end - start}"
         print(result)
 
+        # 如果出现了nan则是过拟合，则直接提前结束，不保存模型
+        if torch.any(torch.isnan(loss)):
+            print("过拟合")
+            break
+
+        # 如果test_loss的最小值更新了，则保存模型
         min_test_loss = min(test_loss, min_test_loss)
-        train_info_data = {"epoch": num_epoch, "train_loss_list": train_loss_list, "min_test_loss": min_test_loss,
-                           "loss_up_num": loss_up_num}
-        save_model(model, train_info_data, model_name)
+        if min_test_loss == test_loss:
+            is_model_save = True
+
+        if is_model_save:
+            train_info_data = {"epoch": num_epoch, "train_loss_list": train_loss_list, "min_test_loss": min_test_loss,
+                               "loss_up_num": loss_up_num}
+            save_model(model, train_info_data, model_name)
+
+        if is_train_stop:
+            break
 
 
 def loss_plot(train_loss, val_loss=None, epoch_num=0):
@@ -172,7 +191,7 @@ def load_model(model, filename):
 
 if __name__ == '__main__':
     # num_epoch = 0
-    model_name = "Transformer_AFM_64_4"
+    model_name = "Transformer_AFM_128_4"
     train_iter, test_iter, config = pre.get_dataiter()
 
     narreM = narre.NARRE

@@ -15,7 +15,10 @@ class Model(nn.Module):
         # 根据fusionLayer中的不同融合操作调整feature_dim = after_fusion_dim
         self.config.after_fusion_dim = 2 * config.num_feature * config.id_emb_dim
 
-        self.predictionLayer = AFM(config).to(config.device)
+        if self.config.predictionLayerType == 'afm':
+            self.predictionLayer = AFM(config).to(config.device)
+        else:
+            self.predictionLayer = FM(config).to(config.device)
 
         self.dropout = nn.Dropout(self.config.drop_out)
 

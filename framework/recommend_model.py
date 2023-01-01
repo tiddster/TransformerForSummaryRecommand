@@ -18,13 +18,13 @@ class PredictionLayer(nn.Module):
         super(PredictionLayer, self).__init__()
         self.output_type = 'lfm'
         self.config = config
-        if config.predictionLayerOutputType == "fm":
+        if config.predictionLayerType == "fm":
             self.model = FM(config)
-        elif config.predictionLayerOutputType == "lfm":
+        elif config.predictionLayerType == "lfm":
             self.model = LFM(config)
-        elif config.predictionLayerOutputType == 'mlp':
+        elif config.predictionLayerType == 'mlp':
             self.model = MLP(config)
-        elif config.predictionLayerOutputType == 'nfm':
+        elif config.predictionLayerType == 'nfm':
             self.model = NFM(config)
 
     def forward(self, feature, data):
