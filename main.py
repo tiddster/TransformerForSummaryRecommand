@@ -30,7 +30,7 @@ def train(train_info_data=None):
     # for epoch in range(num_epoch):
     while loss_up_num <= 3:
         is_model_save = True    # 根据train_loss是否下降判断是否保存模型
-        is_train_stop = False  # 若两次loss小于1e-6则提前结束训练
+        is_train_stop = False  # 若两次loss小于1e-5则提前结束训练
         num_epoch += 1
         result = f"epoch: {num_epoch}  ====>  "
         start = time.time()
@@ -60,6 +60,10 @@ def train(train_info_data=None):
         train_loss = train_total_loss / train_total_num
         result += f"train_loss: {train_loss}  "
 
+        # 如果两次loss相差小于1e-6, 则提前结束
+        if abs(train_loss - train_loss_list[-1]) < 1e-5:
+            is_train_stop = True
+
         # 如果train_loss比上次的大，则不保存模型，loss_up_num+1
         if train_loss > train_loss_list[-1]:
             loss_up_num += 1
@@ -67,10 +71,6 @@ def train(train_info_data=None):
         else:
             train_loss_list.append(train_loss)
             is_model_save = True
-
-        # 如果两次loss相差小于1e-6, 则提前结束
-        if abs(train_loss - train_loss_list[-1]) < 1e-6:
-            is_train_stop = True
 
         # ---------------------------验证模式--------------------------------
         # model.eval()
@@ -191,8 +191,8 @@ def load_model(model, filename):
 
 if __name__ == '__main__':
     # num_epoch = 0
-    model_name = "Transformer_AFM_128_4"
     train_iter, test_iter, config = pre.get_dataiter()
+    model_name = f"Transformer_AFM_{config.feature_dim}_{config.num_heads}"
 
     narreM = narre.NARRE
     mpcnM = mpcn.MPCN
