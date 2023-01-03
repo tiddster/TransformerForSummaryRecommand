@@ -142,6 +142,7 @@ def train(train_info_data=None):
             train_info_data = {"epoch": num_epoch, "train_loss_list": train_loss_list, "min_test_loss": min_test_loss,
                                "loss_up_num": loss_up_num}
             save_model(model, train_info_data, model_name)
+            print("储存模型......")
 
         if is_train_stop:
             break
@@ -160,7 +161,7 @@ def loss_plot(train_loss, val_loss=None, epoch_num=0):
 
 def save_model(model, train_info_data, filename):
     # 保存模型
-    model_path = f"save_final_model\\{filename}.pt"
+    model_path = f"P:\TransformerAFM_MODEL\\{filename}.pt"
     torch.save(model.state_dict(), model_path)
 
     # 保存训练loss、最小test_loss、loss增加次数
@@ -173,7 +174,7 @@ def save_model(model, train_info_data, filename):
 
 def load_model(model, filename):
     # 读取模型
-    model_path = f"save_final_model\\{filename}.pt"
+    model_path = f"P:\TransformerAFM_MODEL\\{filename}.pt"
     model_state_dict = torch.load(model_path)
     model.load_state_dict(model_state_dict)
 
@@ -193,6 +194,7 @@ if __name__ == '__main__':
     # num_epoch = 0
     train_iter, test_iter, config = pre.get_dataiter()
     model_name = f"Transformer_AFM_{config.feature_dim}_{config.num_heads}"
+    print(model_name)
 
     narreM = narre.NARRE
     mpcnM = mpcn.MPCN
@@ -201,7 +203,7 @@ if __name__ == '__main__':
 
     model = Model(config, transM).to(config.device)
     train_info_data = None
-    # model, train_info_data = load_model(model, model_name)
+    model, train_info_data = load_model(model, model_name)
     lossType = config.lossType
 
     mse_criterion = nn.MSELoss()
