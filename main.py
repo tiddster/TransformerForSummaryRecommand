@@ -161,7 +161,7 @@ def loss_plot(train_loss, val_loss=None, epoch_num=0):
 
 def save_model(model, train_info_data, filename):
     # 保存模型
-    model_path = f"P:\TransformerAFM_MODEL\\{filename}.pt"
+    model_path = f"P:\\TransformerAFM_MODEL\\{filename}.pt"
     torch.save(model.state_dict(), model_path)
 
     # 保存训练loss、最小test_loss、loss增加次数
@@ -174,7 +174,7 @@ def save_model(model, train_info_data, filename):
 
 def load_model(model, filename):
     # 读取模型
-    model_path = f"P:\TransformerAFM_MODEL\\{filename}.pt"
+    model_path = f"P:\\TransformerAFM_MODEL\\{filename}.pt"
     model_state_dict = torch.load(model_path)
     model.load_state_dict(model_state_dict)
 
@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     model = Model(config, transM).to(config.device)
     train_info_data = None
-    model, train_info_data = load_model(model, model_name)
+    # model, train_info_data = load_model(model, model_name)
     lossType = config.lossType
 
     mse_criterion = nn.MSELoss()
