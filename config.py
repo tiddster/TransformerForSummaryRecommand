@@ -2,16 +2,15 @@ import torch
 class Config():
     def __init__(self):
         self.num_heads = 8  # 多头注意力的头数
-        self.num_transformer_heads = 4
 
         # 这两个参数在模型实现的时候会重新定义
         self.num_feature = 2
         self.predictionLayerType = 'fm'
 
         self.vocab_size = 30522  # 词典大小
-        self.feature_dim = 128 # 特征的维度
-        self.summary_dim = 128
-        self.id_emb_dim = 128  # id嵌入层维度
+        self.feature_dim = 64 # 特征的维度
+        self.summary_dim = 64
+        self.id_emb_dim = 64  # id嵌入层维度
         self.after_fusion_dim = self.id_emb_dim * self.num_feature * 2
         self.kernel_size = 1
         self.filters_num = 20

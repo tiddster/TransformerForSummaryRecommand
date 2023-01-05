@@ -69,6 +69,7 @@ def train(train_info_data=None):
             loss_up_num += 1
             is_model_save = False
         else:
+            loss_up_num = 0
             train_loss_list.append(train_loss)
             is_model_save = True
 
