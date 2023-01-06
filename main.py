@@ -204,7 +204,7 @@ if __name__ == '__main__':
 
     model = Model(config, transM).to(config.device)
     train_info_data = None
-    # model, train_info_data = load_model(model, model_name)
+    model, train_info_data = load_model(model, model_name)
     lossType = config.lossType
 
     mse_criterion = nn.MSELoss()
